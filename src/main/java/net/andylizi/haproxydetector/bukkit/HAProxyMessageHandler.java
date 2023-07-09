@@ -48,9 +48,16 @@ class HAProxyMessageHandler extends SimpleChannelInboundHandler<HAProxyMessage> 
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, HAProxyMessage msg) {
-        SocketAddress realAddress = new InetSocketAddress(msg.sourceAddress(), msg.sourcePort());
-        BukkitMain.logger.log(Level.INFO, "Set remote address via proxy {0} -> {1}", 
-                new Object[] { ctx.channel().remoteAddress(), realAddress });
+        InetSocketAddress realAddress = new InetSocketAddress(msg.sourceAddress(), msg.sourcePort());
+        InetSocketAddress proxyAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+        if (proxyAddress != null) {
+            RealProxyMap.realToProxy.put(realAddress, proxyAddress);
+            RealProxyMap.proxyToReal.put(proxyAddress, realAddress);
+        } else {
+            BukkitMain.logger.log(Level.WARNING, "Failed to map address. ");
+        }
+//        BukkitMain.logger.log(Level.INFO, "Set remote address via proxy {0} -> {1}",
+//                new Object[] { ctx.channel().remoteAddress(), realAddress });
         try {
             addressSetter.invokeExact(realAddress);
         } catch (Throwable e) {
